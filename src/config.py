@@ -17,15 +17,22 @@
 # Please note that storing the batch and storage account keys in Azure Key Vault
 # is a better practice for Production usage.
 
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
+
 """
 Configure Batch and Storage Account credentials
+Create a .env FIle in the src directory
 """
 
-BATCH_ACCOUNT_NAME = 'batchpythonquickstart'  # Your batch account name
-BATCH_ACCOUNT_KEY = 'M/GTOJbIReauJEMEe0KhUaPnODm7ACMp83AWQNbQXSD5T0HmLywdQCug/Gwfujuhyw4LfJCb3uHV+ABa/hl9ug=='  # Your batch account key
-BATCH_ACCOUNT_URL = 'https://batchpythonquickstart.brazilsouth.batch.azure.com'  # Your batch account URL
-STORAGE_ACCOUNT_NAME = 'batchpythonquickstart2'
-STORAGE_ACCOUNT_KEY = 'fnxcNTrWDzoXYYNL/Ls7Yvt1CSITogzHD+BCN6bfoMgWbasd8KmVhysVWIOTUNLLubasuZhw6vqr+ASt5R37fw=='
+BATCH_ACCOUNT_NAME = os.getenv('BATCH_ACCOUNT_NAME')  # Your batch account name
+BATCH_ACCOUNT_KEY = os.getenv('BATCH_ACCOUNT_KEY')  # Your batch account key
+BATCH_ACCOUNT_URL = os.getenv('BATCH_ACCOUNT_URL')  # Your batch account URL
+STORAGE_ACCOUNT_NAME = os.getenv('STORAGE_ACCOUNT_NAME')
+STORAGE_ACCOUNT_KEY = os.getenv('STORAGE_ACCOUNT_KEY')
 STORAGE_ACCOUNT_DOMAIN = 'blob.core.windows.net' # Your storage account blob service domain
 
 POOL_ID = 'PythonQuickstartPool'  # Your Pool ID

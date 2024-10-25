@@ -55,57 +55,8 @@ DEFAULT_ENCODING = "utf-8"
 # unique to your accounts. These are used when constructing connection strings
 # for the Batch and Storage client objects.
 
-def query_yes_no(question: str, default: str = "yes") -> str:
-    """
-    Prompts the user for yes/no input, displaying the specified question text.
-
-    :param str question: The text of the prompt for input.
-    :param str default: The default if the user hits <ENTER>. Acceptable values
-    are 'yes', 'no', and None.
-    :return: 'yes' or 'no'
-    """
-    valid = {'y': 'yes', 'n': 'no'}
-    if default is None:
-        prompt = ' [y/n] '
-    elif default == 'yes':
-        prompt = ' [Y/n] '
-    elif default == 'no':
-        prompt = ' [y/N] '
-    else:
-        raise ValueError(f"Invalid default answer: '{default}'")
-
-    choice = default
-
-    while 1:
-        user_input = input(question + prompt).lower()
-        if not user_input:
-            break
-        try:
-            choice = valid[user_input[0]]
-            break
-        except (KeyError, IndexError):
-            print("Please respond with 'yes' or 'no' (or 'y' or 'n').\n")
-
-    return choice
 
 
-def print_batch_exception(batch_exception: batchmodels.BatchErrorException):
-    """
-    Prints the contents of the specified Batch exception.
-
-    :param batch_exception:
-    """
-    print('-------------------------------------------')
-    print('Exception encountered:')
-    if batch_exception.error and \
-            batch_exception.error.message and \
-            batch_exception.error.message.value:
-        print(batch_exception.error.message.value)
-        if batch_exception.error.values:
-            print()
-            for mesg in batch_exception.error.values:
-                print(f'{mesg.key}:\t{mesg.value}')
-    print('-------------------------------------------')
 
 
 def upload_file_to_container(blob_storage_service_client: BlobServiceClient,
@@ -340,41 +291,26 @@ def print_task_output(batch_service_client: BatchServiceClient, job_id: str, tim
             print(f"Task: {task.id}")
             print(f"Node: {node_id}")
             print()
-
-        # stream = batch_service_client.file.get_from_task(
-        #     job_id, task.id, config.STANDARD_OUT_FILE_NAME)
-
-        # file_text = _read_stream_as_string(
-        #     stream,
-        #     text_encoding)
-
-        # if text_encoding is None:
-        #     text_encoding = DEFAULT_ENCODING
-
-        # sys.stdout = io.TextIOWrapper(sys.stdout.detach(), encoding = text_encoding)
-        # sys.stderr = io.TextIOWrapper(sys.stderr.detach(), encoding = text_encoding)
-
-        # print("Standard output:")
-        # print(file_text)
-
-
-def _read_stream_as_string(stream, encoding) -> str:
+            
+def print_batch_exception(batch_exception: batchmodels.BatchErrorException):
     """
-    Read stream as string
+    Prints the contents of the specified Batch exception.
 
-    :param stream: input stream generator
-    :param str encoding: The encoding of the file. The default is utf-8.
-    :return: The file content.
+    :param batch_exception:
     """
-    output = io.BytesIO()
-    try:
-        for data in stream:
-            output.write(data)
-        if encoding is None:
-            encoding = DEFAULT_ENCODING
-        return output.getvalue().decode(encoding)
-    finally:
-        output.close()
+    print('-------------------------------------------')
+    print('Exception encountered:')
+    if batch_exception.error and \
+            batch_exception.error.message and \
+            batch_exception.error.message.value:
+        print(batch_exception.error.message.value)
+        if batch_exception.error.values:
+            print()
+            for mesg in batch_exception.error.values:
+                print(f'{mesg.key}:\t{mesg.value}')
+    print('-------------------------------------------')
+
+
 
 if __name__ == '__main__':
 
@@ -396,14 +332,6 @@ if __name__ == '__main__':
         blob_service_client.create_container(input_container_name)
     except ResourceExistsError:
         pass
-    
-    # Use the blob client to create the containers in Azure Storage if they
-    # don't yet exist.
-    # input_container_name = 'output'      # pylint: disable=invalid-name
-    # try:
-    #     blob_service_client.create_container(input_container_name)
-    # except ResourceExistsError:
-    #     pass
     
     # The collection of data files that are to be processed by the tasks.
     input_file_paths = [os.path.join(sys.path[0], f'files\\taskdata0.txt'),
@@ -449,14 +377,6 @@ if __name__ == '__main__':
         sleep = 2
         command_line = f"/bin/bash -c 'sh {env_application_package_dir}/{config.APP_NAME} $$ {sleep}'"
         
-
-                
-        #sleep = 2
-       
-        #command = f"/bin/bash -c 'cat {input_file.file_path} > $AZ_BATCH_TASK_WORKING_DIR/output.txt'"
-        #command = f"/bin/bash -c 'cat {input_file.file_path} > $AZ_BATCH_TASK_WORKING_DIR/output.txt'"
-        #command_line = f"/bin/bash -c 'sh {env_app_dir}/app.sh'"
-        
         # Create the pool that will contain the compute nodes that will execute the
         # tasks.        
         create_pool(batch_client, pool_id)
@@ -486,26 +406,7 @@ if __name__ == '__main__':
         elapsed_time = end_time - start_time
         print(f'Elapsed time: {elapsed_time}')
         print()
-        # input('Press ENTER to exit...')
 
     except batchmodels.BatchErrorException as err:
         print_batch_exception(err)
         raise
-    
-    
-
-    # fazer um finally para deletar os containers e pools
-    # except Exception as e:
-
-    # finally:
-    #   # Clean up storage resources
-    #     print(f'Deleting container [{input_container_name}]...')
-    #     blob_service_client.delete_container(input_container_name)
-
-    #     # Clean up Batch resources (if the user so chooses).
-    #     if query_yes_no('Delete job?') == 'yes':
-    #         batch_client.job.delete(config.JOB_ID)
-
-    #     if query_yes_no('Delete pool?') == 'yes':
-    #         batch_client.pool.delete(config.POOL_ID)
- 
