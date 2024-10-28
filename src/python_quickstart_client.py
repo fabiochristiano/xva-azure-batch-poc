@@ -1,40 +1,14 @@
-# python quickstart client Code Sample
-#
-# Copyright (c) Microsoft Corporation
-#
-# All rights reserved.
-#
-# MIT License
-#
-# Permission is hereby granted, free of charge, to any person obtaining a
-# copy of this software and associated documentation files (the "Software"),
-# to deal in the Software without restriction, including without limitation
-# the rights to use, copy, modify, merge, publish, distribute, sublicense,
-# and/or sell copies of the Software, and to permit persons to whom the
-# Software is furnished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-# FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-# DEALINGS IN THE SOFTWARE.
-
 """
 Create a pool of nodes to output text files from azure blob storage.
 Using https://learn.microsoft.com/en-us/azure/batch/quick-run-python doc.
 """
 
 import datetime
-import io
 import os
 import sys
 import time
 import random
+import logging
 
 from azure.storage.blob import (
     BlobServiceClient,
@@ -48,15 +22,13 @@ from azure.core.exceptions import ResourceExistsError
 
 import config
 
-DEFAULT_ENCODING = "utf-8"
+# Configuração básica do logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
 
-
-# Update the Batch and Storage account credential strings in config.py with values
-# unique to your accounts. These are used when constructing connection strings
-# for the Batch and Storage client objects.
-
-
-
+# Remove blob logging
+logger_blob = logging.getLogger("azure.core.pipeline.policies.http_logging_policy")
+logger_blob.disabled = True
 
 
 def upload_file_to_container(blob_storage_service_client: BlobServiceClient,
@@ -73,7 +45,7 @@ def upload_file_to_container(blob_storage_service_client: BlobServiceClient,
     blob_name = os.path.basename(file_path)
     blob_client = blob_storage_service_client.get_blob_client(container_name, blob_name)
 
-    print(f'Uploading file {file_path} to container [{container_name}]...')
+    logger.info(f'Uploading file {file_path} to container [{container_name}]...')
 
     with open(file_path, "rb") as data:
         blob_client.upload_blob(data, overwrite=True)
@@ -124,12 +96,8 @@ def create_pool(batch_service_client: BatchServiceClient, pool_id: str):
     :param str offer: Marketplace image offer
     :param str sku: Marketplace image sku
     """
-    print(f'Creating pool [{pool_id}]...')
+    logger.info(f'Creating pool [{pool_id}]...')
 
-    # Create a new pool of Linux compute nodes using an Azure Virtual Machines
-    # Marketplace image. For more information about creating pools of Linux
-    # nodes, see:
-    # https://azure.microsoft.com/documentation/articles/batch-linux-nodes/
     new_pool = batchmodels.PoolAddParameter(
         id=pool_id,
         virtual_machine_configuration=batchmodels.VirtualMachineConfiguration(
@@ -148,7 +116,7 @@ def create_pool(batch_service_client: BatchServiceClient, pool_id: str):
         batch_service_client.pool.add(new_pool)
     except batchmodels.BatchErrorException as err:
         if err.error.code == "PoolExists":
-            print(f"Pool already exists.")
+            logger.info(f"Pool already exists.")
             pass
         else:
             raise
@@ -164,7 +132,7 @@ def create_job(batch_service_client: BatchServiceClient, job_id: str, pool_id: s
     :param str job_id: The ID for the job.
     :param str pool_id: The ID for the pool.
     """
-    print(f'Creating job [{job_id}]...')
+    logger.info(f'Creating job [{job_id}]...')
 
     job = batchmodels.JobAddParameter(
         id=job_id,
@@ -174,7 +142,7 @@ def create_job(batch_service_client: BatchServiceClient, job_id: str, pool_id: s
         batch_service_client.job.add(job)
     except batchmodels.BatchErrorException as err:
         if err.error.code == "JobExists":
-            print(f"Job already exists.")
+            logger.info(f"Job already exists.")
             pass
         else:
             raise
@@ -182,29 +150,27 @@ def create_job(batch_service_client: BatchServiceClient, job_id: str, pool_id: s
         print()
 
 
-
 def list_batch_application(batch_service_client: BatchServiceClient):
     try:        
         applications = batch_service_client.application.list()
-        print(f'Applications')
+        logger.info(f'Applications')
         for app in applications:
             print(f'Application Id = {app.id} - Versions: {app.versions} - Lastest Version: {app.versions[-1]}')
     except Exception as e:
         print(f"Erro ao listar as aplicações: {e}")
         raise
     
-    
-    
+     
 def get_lastest_version_batch_application(batch_service_client: BatchServiceClient, application_id: str):
     try:        
         application = batch_service_client.application.get(application_id)
-        print('Application Details')
-        print(f'Application Id = {application.id} - Versions: {application.versions} - Lastest Version: {application.versions[-1]}')
+        logger.info('Application Details')
+        logger.info(f'Application Id = {application.id} - Versions: {application.versions} - Lastest Version: {application.versions[-1]}')
         print()
         
         return application.versions[-1]
     except Exception as e:
-        print(f"Erro ao obter a aplicação: {e}")
+        logger.info(f"Erro ao obter a aplicação: {e}")
         raise
     
 
@@ -218,7 +184,7 @@ def add_tasks(batch_service_client: BatchServiceClient, job_id: str, resource_in
      created for each input file.
     """
 
-    print(f'Creating tasks to job [{job_id}]...')
+    logger.info(f'Creating tasks to job [{job_id}]...')
 
     tasks = []
 
@@ -233,7 +199,7 @@ def add_tasks(batch_service_client: BatchServiceClient, job_id: str, resource_in
                 application_package_references=application_package_references
             )
         )
-        print(f'Created tasks [{id_task}]')
+        logger.info(f'Created tasks [{id_task}]')
    
     batch_service_client.task.add_collection(job_id, tasks)
     print()
@@ -280,7 +246,7 @@ def print_task_output(batch_service_client: BatchServiceClient, job_id: str, tim
     :param str job_id: The id of the job with task output files to print.
     """
 
-    print('Printing task output...')
+    logger.info('Printing task output...')
 
     tasks = batch_service_client.task.list(job_id)
 
@@ -288,8 +254,8 @@ def print_task_output(batch_service_client: BatchServiceClient, job_id: str, tim
 
         node_id = batch_service_client.task.get(job_id, task.id).node_info.node_id
         if str(timestap) in task.id:
-            print(f"Task: {task.id}")
-            print(f"Node: {node_id}")
+            logger.info(f"Task: {task.id}")
+            logger.info(f"Node: {node_id}")
             print()
             
 def print_batch_exception(batch_exception: batchmodels.BatchErrorException):
@@ -298,49 +264,46 @@ def print_batch_exception(batch_exception: batchmodels.BatchErrorException):
 
     :param batch_exception:
     """
-    print('-------------------------------------------')
-    print('Exception encountered:')
+    logger.error('-------------------------------------------')
+    logger.error('Exception encountered:')
     if batch_exception.error and \
             batch_exception.error.message and \
             batch_exception.error.message.value:
-        print(batch_exception.error.message.value)
+        logger.error(batch_exception.error.message.value)
         if batch_exception.error.values:
             print()
             for mesg in batch_exception.error.values:
-                print(f'{mesg.key}:\t{mesg.value}')
-    print('-------------------------------------------')
-
+                logger.error(f'{mesg.key}:\t{mesg.value}')
+    logger.error('-------------------------------------------')
 
 
 if __name__ == '__main__':
-
+        
     start_time = datetime.datetime.now().replace(microsecond=0)
-    print(f'Sample start: {start_time}')
+    logger.info(f'Sample start: {start_time}')
     print()
 
-    # Create the blob client, for use in obtaining references to
-    # blob storage containers and uploading files to containers.
+    # Create the blob client, for use in obtaining references to blob storage containers and uploading files to containers.
     blob_service_client = BlobServiceClient(
         account_url=f"https://{config.STORAGE_ACCOUNT_NAME}.{config.STORAGE_ACCOUNT_DOMAIN}/",
-        credential=config.STORAGE_ACCOUNT_KEY
+        credential=config.STORAGE_ACCOUNT_KEY,
+        logger=logger_blob  
     )
 
-    # Use the blob client to create the containers in Azure Storage if they
-    # don't yet exist.
-    input_container_name = 'input'      # pylint: disable=invalid-name
+    # Use the blob client to create the containers in Azure Storage if they don't yet exist.
+    input_container_name = 'input'
     try:
         blob_service_client.create_container(input_container_name)
     except ResourceExistsError:
         pass
     
     # The collection of data files that are to be processed by the tasks.
-    input_file_paths = [os.path.join(sys.path[0], f'files\\taskdata0.txt'),
-                        os.path.join(sys.path[0], f'files\\taskdata1.txt'),
-                        os.path.join(sys.path[0], f'files\\taskdata2.txt')                        
-                        ]
+    input_file_paths = [os.path.join(sys.path[0], 'files', 'taskdata0.txt'),
+                        os.path.join(sys.path[0], 'files', 'taskdata1.txt'),
+                        os.path.join(sys.path[0], 'files', 'taskdata2.txt')]
 
     # Upload the data files.
-    print('Uploading files to Azure Storage')
+    logger.info('Uploading files to Azure Storage')
     input_files = [
         upload_file_to_container(blob_service_client, input_container_name, file_path)
         for file_path in input_file_paths]
@@ -373,8 +336,7 @@ if __name__ == '__main__':
         
         #Task command entrypoint
         env_application_package_dir = f'$AZ_BATCH_APP_PACKAGE_{application_id}_{application_version.replace('.', '_')}'
-        #sleep = random.uniform(20, 40)
-        sleep = 2
+        sleep = random.uniform(2, 4)
         command_line = f"/bin/bash -c 'sh {env_application_package_dir}/{config.APP_NAME} $$ {sleep}'"
         
         # Create the pool that will contain the compute nodes that will execute the
@@ -388,12 +350,10 @@ if __name__ == '__main__':
         add_tasks(batch_client, job_id, input_files, timestap, application_package_references, command_line)
 
         # Pause execution until tasks reach Completed state.
-        wait_for_tasks_to_complete(batch_client,
-                                   job_id,
-                                   datetime.timedelta(minutes=30))
-
-        print("Success! All tasks reached the 'Completed' state within the "
-              "specified timeout period.")
+        wait_for_tasks_to_complete(batch_client, job_id, datetime.timedelta(minutes=30))
+        
+        print()
+        logger.info("Success! All tasks reached the 'Completed' state within the specified timeout period.")
         print()
 
         # Print the stdout.txt and stderr.txt files for each task to the console
@@ -401,10 +361,9 @@ if __name__ == '__main__':
 
         # Print out some timing info
         end_time = datetime.datetime.now().replace(microsecond=0)
-        print()
-        print(f'Sample end: {end_time}')
+        logger.info(f'Sample end: {end_time}')
         elapsed_time = end_time - start_time
-        print(f'Elapsed time: {elapsed_time}')
+        logger.info(f'Elapsed time: {elapsed_time}')
         print()
 
     except batchmodels.BatchErrorException as err:
