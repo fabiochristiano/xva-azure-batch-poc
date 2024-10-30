@@ -1,74 +1,72 @@
-import numpy as np
-import json
+"""
+Create a pool of nodes to output text files from azure blob storage.
+Using https://learn.microsoft.com/en-us/azure/batch/quick-run-python doc.
+"""
 
-# Função de Simulação de Monte Carlo para Estimar o Valor de uma Opção de Compra
-def monte_carlo_option_pricing(params):
-    S0 = params["stock_price"]
-    K = params["strike_price"]
-    r = params["risk_free_rate"]
-    sigma = params["volatility"]
-    T = params["time_to_maturity"]
-    num_simulations = params["num_simulations"]
-    num_steps = params["num_steps"]
+import datetime
+import logging
 
-    dt = T / num_steps
-    discount_factor = np.exp(-r * T)
+import azure.batch.models as batchmodels
+
+import config, azure.storage_impl as storage_impl, azure.batch_imp as batch_imp
+
+# Configuração básica do logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+def run_batch_process(input_file_paths):
+    start_time = datetime.datetime.now().replace(microsecond=0)
+    logger.info(f'Sample start: {start_time}')
+    print()
+
+    # Use the blob client to create the containers in Azure Storage if they don't yet exist.
+    input_container_name = 'input'
+    storage_impl.create_container_if_not_exists(input_container_name)  # Use the new function
     
-    # Simulações de Monte Carlo
-    option_values = np.zeros(num_simulations)
-    
-    for i in range(num_simulations):
-        prices = np.zeros(num_steps + 1)
-        prices[0] = S0
+    # Upload the data files.
+    logger.info('Uploading files to Azure Storage')
+    input_files = [
+        storage_impl.upload_file_to_container(input_container_name, file_path)
+        for file_path in input_file_paths]
+    print()
+
+    try:
+        timestap  = int(datetime.datetime.now().timestamp())
         
-        for t in range(1, num_steps + 1):
-            z = np.random.standard_normal()
-            prices[t] = prices[t-1] * np.exp((r - 0.5 * sigma**2) * dt + sigma * np.sqrt(dt) * z)
+        pool_id = f'{config.POOL_ID}-{int(datetime.datetime.now().timestamp())}'
+        job_id = f'{config.JOB_ID}-{int(datetime.datetime.now().timestamp())}'
+        #pool_id = f'{config.POOL_ID}'
+        #job_id = f'{config.JOB_ID}'
         
-        option_values[i] = max(prices[-1] - K, 0)
-    
-    # Valor Esperado da Opção de Compra
-    expected_option_value = np.mean(option_values) * discount_factor
-    
-    # Cálculo do Intervalo de Confiança
-    std_error = np.std(option_values) / np.sqrt(num_simulations)
-    confidence_interval = (expected_option_value - 1.96 * std_error, expected_option_value + 1.96 * std_error)
-    
-    return {
-        "expected_option_value": expected_option_value,
-        "confidence_interval": list(confidence_interval),  # Convertendo tupla para lista
-        "option_values": option_values.tolist()
-    }
+        # Create the pool that will contain the compute nodes that will execute the tasks.        
+        batch_imp.create_pool(pool_id)
 
-# Função para processar as simulações de Monte Carlo a partir de um arquivo JSON
-def process_monte_carlo_simulations(input_file):
-    # Carregar a lista de simulações do JSON de entrada
-    with open(input_file, 'r') as f:
-        data = json.load(f)
-        simulations = data["simulations"]
+        # Create the job that will run the tasks.
+        batch_imp.create_job(job_id, pool_id)
 
-    # Executar a Simulação para cada conjunto de parâmetros na lista
-    results = []
-    for simulation in simulations:
-        params = simulation["parameters"]
-        result = monte_carlo_option_pricing(params)
-        simulation["results"] = result
-        results.append(simulation)
+        # Add the tasks to the job.
+        batch_imp.add_tasks(job_id, input_files, timestap)
 
-    # Converter todos os resultados para JSON
-    result_json = json.dumps({"simulations": results}, indent=4)
+        # Pause execution until tasks reach Completed state.
+        batch_imp.wait_for_tasks_to_complete(job_id, datetime.timedelta(minutes=30))
+        
+        print()
+        logger.info("Success! All tasks reached the 'Completed' state within the specified timeout period.")
+        print()
 
-    # Salvar em um arquivo JSON
-    output_file = input_file.replace("input", "result")
-    with open(output_file, 'w') as f:
-        f.write(result_json)
+        # Print the stdout.txt and stderr.txt files for each task to the console
+        batch_imp.print_task_output(job_id, timestap)
 
-    print(f"Resultados salvos em '{output_file}'")
-    print(result_json)
+        # Print out some timing info
+        end_time = datetime.datetime.now().replace(microsecond=0)
+        logger.info(f'Sample end: {end_time}')
+        elapsed_time = end_time - start_time
+        logger.info(f'Elapsed time: {elapsed_time}')
+        print()
 
-def main():
-    # Exemplo de chamada da função
-    process_monte_carlo_simulations('monte_carlo_input.json')
+    except batchmodels.BatchErrorException as err:
+        batch_imp.print_batch_exception(err)
+        raise
 
-if __name__ == "__main__":
-    main()
+if __name__ == '__main__':
+    run_batch_process()

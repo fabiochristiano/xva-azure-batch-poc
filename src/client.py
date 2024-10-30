@@ -16,7 +16,7 @@ def split_json(input_file, num_nodes):
         chunk = simulations[start_index:end_index]
         
         output_data = {'simulations': chunk}
-        output_file = f'monte_carlo_input_part_{i+1}.json'
+        output_file = f'src/files/temp/monte_carlo_input_part_{i+1}.json'
         
         with open(output_file, 'w', encoding='utf-8') as outfile:
             json.dump(output_data, outfile, ensure_ascii=False, indent=4)
@@ -28,7 +28,6 @@ def split_json(input_file, num_nodes):
 def main():
     # Exemplo de uso
     split_json('monte_carlo_input.json', 4)
-    # split_json('all_option_pricing_results.json', 4)
 
 if __name__ == "__main__":
     main()

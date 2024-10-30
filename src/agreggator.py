@@ -14,13 +14,13 @@ def aggregate_and_save(input_files):
     aggregated_simulations = load_and_aggregate(input_files)
 
     # Salvar os dados agregados em um novo arquivo JSON
-    with open('monte_carlo_result_aggregated.json', 'w') as f:
+    with open('src/files/output/monte_carlo_result_aggregated.json', 'w') as f:
         json.dump({"simulations": aggregated_simulations}, f, indent=4)
 
     print(f"Dados agregados salvos em aggregated_monte_carlo_input.json")
 
 def main():
-    # Lista de arquivos a serem agregados
+    # Exemplo de uso
     input_files = [
         'monte_carlo_input_part_1.json',
         'monte_carlo_input_part_2.json',

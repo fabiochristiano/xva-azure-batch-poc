@@ -27,9 +27,9 @@ def create_zip_file(zip_file_path, files_to_zip):
 
     
 if __name__ == '__main__':
-    zip_file_path = './src/src-app-package/app.zip'
+    zip_file_path = './src/src-montecarlo-app/montecarlo-app.zip'
     files_to_zip = [
-        './src/src-app-package/app.sh'
+        './src/src-montecarlo-app/montecarlo_app.py'
     ]
     delete_zip_file(zip_file_path)
     create_zip_file(zip_file_path, files_to_zip)

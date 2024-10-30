@@ -1,5 +1,6 @@
 import numpy as np
 import json
+import argparse
 
 # Função de Simulação de Monte Carlo para Estimar o Valor de uma Opção de Compra
 def monte_carlo_option_pricing(params):
@@ -59,12 +60,21 @@ def process_monte_carlo_simulations(input_file):
     result_json = json.dumps({"simulations": results}, indent=4)
 
     # Salvar em um arquivo JSON
-    output_file = 'all_option_pricing_results.json'
+    output_file = input_file.replace("input", "result")
     with open(output_file, 'w') as f:
         f.write(result_json)
 
-    print(f"Resultados salvos em '{output_file}'")
-    print(result_json)
+    #print(f"Resultados salvos em '{output_file}'")
+    #print(result_json)
 
-# Exemplo de chamada da função
-process_monte_carlo_simulations('monte_carlo_input.json')
+def main():
+    parser = argparse.ArgumentParser(description="Processar simulações de Monte Carlo a partir de um arquivo JSON.")
+    parser.add_argument('input_file', type=str, help='Caminho para o arquivo JSON de entrada.')
+    args = parser.parse_args()
+
+    process_monte_carlo_simulations(args.input_file)
+
+
+if __name__ == "__main__":
+    main()
+    #python src/src-montecarlo-app/montecarlo_app.py src/files/temp/monte_carlo_input_part_1.json
