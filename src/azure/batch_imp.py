@@ -41,7 +41,7 @@ def create_pool(pool_id: str):
 /bin/bash -c '
 sudo -S apt-get update &&
 sudo -S apt-get install -y python3 python3-pip &&
-pip3 install numpy &&
+pip3 install numpy azure-storage-blob==12.8.1 &&
 env > env.txt &&
 python3 --version > python-version.txt
 '
@@ -151,7 +151,7 @@ def add_tasks(job_id: str, resource_input_files: list, timestap: int):
         id_task=f'Task-{timestap}-{idx}'        
         tasks.append(batchmodels.TaskAddParameter(
                 id=id_task,
-                command_line=f"/bin/bash -c 'python3 {env_application_package_dir}/montecarlo_app.py $HOME/{input_file.file_path} && {sleep}'",
+                command_line=f"/bin/bash -c 'python3 {env_application_package_dir}/montecarlo_app.py $HOME/{input_file.file_path}'",
                 resource_files=[input_file]
             )
         )

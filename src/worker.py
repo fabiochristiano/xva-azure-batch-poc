@@ -20,7 +20,7 @@ def run_batch_process(input_file_paths):
     print()
 
     # Use the blob client to create the containers in Azure Storage if they don't yet exist.
-    input_container_name = 'input'
+    input_container_name = 'temp'
     storage_impl.create_container_if_not_exists(input_container_name)  # Use the new function
     
     # Upload the data files.
@@ -33,10 +33,10 @@ def run_batch_process(input_file_paths):
     try:
         timestap  = int(datetime.datetime.now().timestamp())
         
-        pool_id = f'{config.POOL_ID}-{int(datetime.datetime.now().timestamp())}'
-        job_id = f'{config.JOB_ID}-{int(datetime.datetime.now().timestamp())}'
-        #pool_id = f'{config.POOL_ID}'
-        #job_id = f'{config.JOB_ID}'
+        #pool_id = f'{config.POOL_ID}-{int(datetime.datetime.now().timestamp())}'
+        #job_id = f'{config.JOB_ID}-{int(datetime.datetime.now().timestamp())}'
+        pool_id = f'{config.POOL_ID}'
+        job_id = f'{config.JOB_ID}'
         
         # Create the pool that will contain the compute nodes that will execute the tasks.        
         batch_imp.create_pool(pool_id)

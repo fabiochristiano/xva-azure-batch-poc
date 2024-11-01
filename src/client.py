@@ -1,9 +1,16 @@
 import json
+import azure.storage_impl as storage_impl
 
-def split_json(input_file, num_nodes):
-    with open(input_file, 'r', encoding='utf-8') as file:
+def split_json(input_file_name):
+    
+    input_container_name = 'input'
+    storage_impl.create_container_if_not_exists(input_container_name)  # Use the new function
+    storage_impl.get_file_from_container('input', input_file_name, f'src/files/input/{input_file_name}')
+    
+    with open(f'src/files/input/{input_file_name}', 'r', encoding='utf-8') as file:
         data = json.load(file)
     
+    num_nodes = 4
     simulations = data['simulations']
     total_simulations = len(simulations)
     chunk_size = (total_simulations + num_nodes - 1) // num_nodes  # Calcula o tamanho de cada parte

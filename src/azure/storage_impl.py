@@ -20,11 +20,7 @@ logger_blob = logging.getLogger("azure.core.pipeline.policies.http_logging_polic
 logger_blob.disabled = True
 
 
-def create_blob_service_client() -> BlobServiceClient:
-    """
-    Creates and returns a BlobServiceClient.
-    """
-    return BlobServiceClient(
+BLOB_SERVICE_CLIENT =  BlobServiceClient(
         account_url=f"https://{config.STORAGE_ACCOUNT_NAME}.{config.STORAGE_ACCOUNT_DOMAIN}/",
         credential=config.STORAGE_ACCOUNT_KEY,
         logger=logger_blob
@@ -37,12 +33,9 @@ def create_container_if_not_exists(container_name: str):
 
     :param blob_service_client: A Blob service client.
     :param str container_name: The name of the container to create.
-    """
-    
-    blob_service_client = create_blob_service_client()
-    
+    """    
     try:
-        blob_service_client.create_container(container_name)
+        BLOB_SERVICE_CLIENT.create_container(container_name)
         logger.info(f'Container [{container_name}] created.')
     except ResourceExistsError:
         logger.info(f'Container [{container_name}] already exists.')
@@ -58,10 +51,9 @@ def upload_file_to_container(container_name: str, file_path: str) -> batchmodels
     :return: A ResourceFile initialized with a SAS URL appropriate for Batch
     tasks.
     """
-    blob_service_client = create_blob_service_client()
         
     blob_name = os.path.basename(file_path)
-    blob_client = blob_service_client.get_blob_client(container_name, blob_name)
+    blob_client = BLOB_SERVICE_CLIENT.get_blob_client(container_name, blob_name)
 
     logger.info(f'Uploading file {file_path} to container [{container_name}]...')
 
@@ -102,3 +94,23 @@ def generate_sas_url(
     Generates and returns a sas url for accessing blob storage
     """
     return f"https://{account_name}.{account_domain}/{container_name}/{blob_name}?{sas_token}"
+
+
+def get_file_from_container(container_name: str, blob_name: str, download_path: str) -> bytes:
+    """
+    Downloads a file from an Azure Blob storage container.
+
+    :param str container_name: The name of the Azure Blob storage container.
+    :param str blob_name: The name of the blob to download.
+    :param str download_path: The local path to save the downloaded file.
+    :return: The content of the downloaded blob.
+    """
+
+    blob_client = BLOB_SERVICE_CLIENT.get_blob_client(container_name, blob_name)
+
+    with open(download_path, "wb") as download_file:
+        download_file.write(blob_client.download_blob().readall())
+
+    logger.info(f'Blob {blob_name} downloaded to {download_path}.')
+
+

@@ -1,6 +1,22 @@
 import numpy as np
 import json
 import argparse
+import os
+from azure.storage.blob import BlobServiceClient
+
+def upload_file_to_container(container_name: str, file_path: str):
+
+    blobl_service_client =  BlobServiceClient(
+        account_url="https://batchpythonquickstart2.blob.core.windows.net/",
+        credential="fnxcNTrWDzoXYYNL/Ls7Yvt1CSITogzHD+BCN6bfoMgWbasd8KmVhysVWIOTUNLLubasuZhw6vqr+ASt5R37fw==",
+    )
+        
+    blob_name = os.path.basename(file_path)
+    blob_client = blobl_service_client.get_blob_client(container_name, blob_name)
+
+    with open(file_path, "rb") as data:
+        blob_client.upload_blob(data, overwrite=True)
+
 
 # Função de Simulação de Monte Carlo para Estimar o Valor de uma Opção de Compra
 def monte_carlo_option_pricing(params):
@@ -64,6 +80,8 @@ def process_monte_carlo_simulations(input_file):
     with open(output_file, 'w') as f:
         f.write(result_json)
 
+    upload_file_to_container('temp', output_file)
+
     #print(f"Resultados salvos em '{output_file}'")
     #print(result_json)
 
@@ -74,6 +92,7 @@ def main():
 
     process_monte_carlo_simulations(args.input_file)
 
+    #process_monte_carlo_simulations('src/files/temp/monte_carlo_input_part_1.json')
 
 if __name__ == "__main__":
     main()
