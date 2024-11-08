@@ -2,13 +2,13 @@ import numpy as np
 import json
 import argparse
 import os
-from azure_impl.storage_impl import BlobServiceClient
+from azure.storage.blob import BlobServiceClient
 
 def upload_file_to_container(container_name: str, file_path: str):
 
     blobl_service_client =  BlobServiceClient(
-        account_url="https://batchpythonquickstart2.blob.core.windows.net/",
-        credential="fnxcNTrWDzoXYYNL/Ls7Yvt1CSITogzHD+BCN6bfoMgWbasd8KmVhysVWIOTUNLLubasuZhw6vqr+ASt5R37fw==",
+        account_url="https://##STORAGE_ACCOUNT_NAME##.blob.core.windows.net/",
+        credential="##STORAGE_ACCOUNT_KEY##",
     )
         
     blob_name = os.path.basename(file_path)

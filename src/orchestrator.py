@@ -1,6 +1,7 @@
 from client import split_json
 from agreggator import aggregate_and_save
 from worker import run_batch_process
+import azure_impl.batch_impl as batch_impl
 
 def orchestrate(input_file):
     
@@ -21,6 +22,9 @@ def orchestrate(input_file):
 def main():
     # Exemplo de uso
     orchestrate('monte_carlo_input.json')
+    
+    batch_impl.delete_all_jobs()
+    batch_impl.delete_all_pools()
 
 if __name__ == "__main__":
     main()
