@@ -1,0 +1,64 @@
+{
+    "simulations": [
+        {
+            "project": "Estimativa de Valor de Opcao de Compra 1",
+            "parameters": {
+                "num_simulations": 100,
+                "num_steps": 252,
+                "stock_price": 100,
+                "strike_price": 105,
+                "risk_free_rate": 0.03,
+                "volatility": 0.2,
+                "time_to_maturity": 1
+            }
+        },
+        {
+            "project": "Estimativa de Valor de Opcao de Compra 2",
+            "parameters": {
+                "num_simulations": 50,
+                "num_steps": 252,
+                "stock_price": 120,
+                "strike_price": 130,
+                "risk_free_rate": 0.04,
+                "volatility": 0.25,
+                "time_to_maturity": 0.5
+            }
+        },
+        {
+            "project": "Estimativa de Valor de Opcao de Compra 3",
+            "parameters": {
+                "num_simulations": 200,
+                "num_steps": 252,
+                "stock_price": 150,
+                "strike_price": 160,
+                "risk_free_rate": 0.05,
+                "volatility": 0.3,
+                "time_to_maturity": 1.5
+            }
+        },
+        {
+            "project": "Estimativa de Valor de Opcao de Compra 4",
+            "parameters": {
+                "num_simulations": 75,
+                "num_steps": 252,
+                "stock_price": 110,
+                "strike_price": 115,
+                "risk_free_rate": 0.02,
+                "volatility": 0.22,
+                "time_to_maturity": 0.75
+            }
+        },
+        {
+            "project": "Estimativa de Valor de Opcao de Compra 5",
+            "parameters": {
+                "num_simulations": 150,
+                "num_steps": 252,
+                "stock_price": 130,
+                "strike_price": 140,
+                "risk_free_rate": 0.03,
+                "volatility": 0.18,
+                "time_to_maturity": 1.2
+            }
+        }
+    ]
+}
