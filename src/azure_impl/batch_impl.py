@@ -6,7 +6,6 @@ import datetime
 import sys
 import time
 from azure.batch.batch_auth import SharedKeyCredentials
-import random
 
 
 logger = logging.getLogger(__name__)
@@ -19,13 +18,19 @@ BATCH_CLIENT = BatchServiceClient(
         config.BATCH_ACCOUNT_URL
     )
     
+
 def create_pool(pool_id: str):
     """
-    Creates a pool of compute nodes with the specified OS settings.
+    Creates a pool with the specified pool ID.
+
+    Args:
+        pool_id (str): The ID of the pool to be created.
+
+    Returns:
+        None
     """
     logger.info(f'Creating pool [{pool_id}]...')
 
-    # Configurar a VM
     virtual_machine_configuration = batchmodels.VirtualMachineConfiguration(
         image_reference=batchmodels.ImageReference(
             publisher="canonical",
@@ -36,7 +41,6 @@ def create_pool(pool_id: str):
         node_agent_sku_id="batch.node.ubuntu 20.04"
     )
 
-    # Configurar o start task
     start_task = batchmodels.StartTask(
         command_line= """
 /bin/bash -c '
@@ -56,7 +60,6 @@ python3 --version > python-version.txt
         wait_for_success=True
     )
 
-    # Configurar a aplicação
     application_package_references= [batchmodels.ApplicationPackageReference(
             application_id=config.APP_ID,
             version=get_lastest_version_batch_application(config.APP_ID)
@@ -82,9 +85,17 @@ python3 --version > python-version.txt
     finally:
         print()
         
+
 def create_job(job_id: str, pool_id: str):
     """
-    Creates a job with the specified ID, associated with the specified pool.
+    Creates a job with the specified job ID and associates it with the specified pool ID.
+
+    Args:
+        job_id (str): The ID of the job to be created.
+        pool_id (str): The ID of the pool to associate with the job.
+
+    Returns:
+        None
     """
     logger.info(f'Creating job [{job_id}]...')
 
@@ -105,6 +116,12 @@ def create_job(job_id: str, pool_id: str):
 
 
 def list_batch_application():
+    """
+    Lists all batch applications.
+
+    Returns:
+        None
+    """
     try:        
         applications = BATCH_CLIENT.application.list()
         logger.info(f'Applications')
@@ -116,6 +133,15 @@ def list_batch_application():
     
      
 def get_lastest_version_batch_application(application_id: str):
+    """
+    Gets the latest version of the specified batch application.
+
+    Args:
+        application_id (str): The ID of the application.
+
+    Returns:
+        str: The latest version of the application.
+    """
     try:        
         application = BATCH_CLIENT.application.get(application_id)
         logger.info('Application Details')
@@ -130,18 +156,20 @@ def get_lastest_version_batch_application(application_id: str):
 
 def add_tasks(job_id: str, resource_input_files: list, timestap: int):
     """
-    Adds a task for each input file in the collection to the specified job.
-    """
+    Adds tasks to the specified job.
 
-    #Application variables
+    Args:
+        job_id (str): The ID of the job.
+        resource_input_files (list): The list of input files for the tasks.
+        timestap (int): The timestamp to be used in task IDs.
+
+    Returns:
+        None
+    """
     application_id=config.APP_ID
     application_version = get_lastest_version_batch_application(application_id)
         
-    #Task command entrypoint
-    env_application_package_dir = f'$AZ_BATCH_APP_PACKAGE_{application_id}_{application_version.replace('.', '_')}'
-    sleep = random.uniform(2, 4)
-    #command_line = f"/bin/bash -c 'sh {env_application_package_dir}/{config.APP_NAME} && {sleep}'"
-    #command_line = f"/bin/bash -c 'python {env_application_package_dir}/montecarlo_app.py $HOME/ && {sleep}'"
+    env_application_package_dir = f'$AZ_BATCH_APP_PACKAGE_{application_id}_{application_version.replace(".", "_")}'
 
     logger.info(f'Creating tasks to job [{job_id}]...')
 
@@ -164,7 +192,14 @@ def add_tasks(job_id: str, resource_input_files: list, timestap: int):
 
 def wait_for_tasks_to_complete(job_id: str, timeout: datetime.timedelta):
     """
-    Returns when all tasks in the specified job reach the Completed state.
+    Waits for all tasks in the specified job to complete within the given timeout period.
+
+    Args:
+        job_id (str): The ID of the job.
+        timeout (datetime.timedelta): The timeout period.
+
+    Returns:
+        bool: True if all tasks completed within the timeout period, otherwise raises an exception.
     """
     timeout_expiration = datetime.datetime.now() + timeout
 
@@ -190,9 +225,15 @@ def wait_for_tasks_to_complete(job_id: str, timeout: datetime.timedelta):
 
 def print_task_output(job_id: str, timestap: str):
     """
-    Prints the stdout.txt file for each task in the job.
-    """
+    Prints the output of tasks in the specified job.
 
+    Args:
+        job_id (str): The ID of the job.
+        timestap (str): The timestamp to filter tasks by.
+
+    Returns:
+        None
+    """
     logger.info('Printing task output...')
 
     tasks = BATCH_CLIENT.task.list(job_id)
@@ -204,9 +245,16 @@ def print_task_output(job_id: str, timestap: str):
             logger.info(f"Node: {node_id}")
             print()
             
+
 def print_batch_exception(batch_exception: batchmodels.BatchErrorException):
     """
-    Prints the contents of the specified Batch exception.
+    Prints details of the specified batch exception.
+
+    Args:
+        batch_exception (batchmodels.BatchErrorException): The batch exception to print.
+
+    Returns:
+        None
     """
     logger.error('-------------------------------------------')
     logger.error('Exception encountered:')
@@ -220,8 +268,14 @@ def print_batch_exception(batch_exception: batchmodels.BatchErrorException):
                 logger.error(f'{mesg.key}:\t{mesg.value}')
     logger.error('-------------------------------------------')
 
-#função para deletar as maquians de todos os  pools existentes  
+
 def delete_all_pools():
+    """
+    Deletes all pools.
+
+    Returns:
+        None
+    """
     try:
         pools = BATCH_CLIENT.pool.list()
         for pool in pools:
@@ -231,8 +285,14 @@ def delete_all_pools():
         logger.error(f"Erro ao deletar os pools: {e}")
         raise
 
-#função para deletar todos os jobs existentes
+
 def delete_all_jobs():
+    """
+    Deletes all jobs.
+
+    Returns:
+        None
+    """
     try:
         jobs = BATCH_CLIENT.job.list()
         for job in jobs:
@@ -243,6 +303,12 @@ def delete_all_jobs():
 
 
 def main():
+    """
+    Main function to delete all pools and jobs.
+
+    Returns:
+        None
+    """
     delete_all_pools()
     delete_all_jobs()
 

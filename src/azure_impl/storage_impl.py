@@ -10,11 +10,11 @@ from azure.storage.blob import (
 )
 from azure.core.exceptions import ResourceExistsError
 
-# Configuração básica do logging
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Remove blob logging
+
 logger_blob = logging.getLogger("azure.core.pipeline.policies.http_logging_policy")
 logger_blob.disabled = True
 
@@ -30,9 +30,12 @@ def create_container_if_not_exists(container_name: str):
     """
     Creates a container if it does not already exist.
 
-    :param blob_service_client: A Blob service client.
-    :param str container_name: The name of the container to create.
-    """    
+    Args:
+        container_name (str): The name of the container to create.
+
+    Returns:
+        None
+    """
     try:
         BLOB_SERVICE_CLIENT.create_container(container_name)
         logger.info(f'Container [{container_name}] created.')
@@ -42,15 +45,15 @@ def create_container_if_not_exists(container_name: str):
 
 def upload_file_to_container(container_name: str, file_path: str) -> batchmodels.ResourceFile:
     """
-    Uploads a local file to an Azure Blob storage container.
+    Uploads a file to the specified container.
 
-    :param blob_storage_service_client: A blob service client.
-    :param str container_name: The name of the Azure Blob storage container.
-    :param str file_path: The local path to the file.
-    :return: A ResourceFile initialized with a SAS URL appropriate for Batch
-    tasks.
+    Args:
+        container_name (str): The name of the container to upload the file to.
+        file_path (str): The path of the file to upload.
+
+    Returns:
+        batchmodels.ResourceFile: The resource file with the SAS URL.
     """
-        
     blob_name = os.path.basename(file_path)
     blob_client = BLOB_SERVICE_CLIENT.get_blob_client(container_name, blob_name)
 
@@ -90,26 +93,36 @@ def generate_sas_url(
     sas_token: str
 ) -> str:
     """
-    Generates and returns a sas url for accessing blob storage
+    Generates a SAS URL for the specified blob.
+
+    Args:
+        account_name (str): The storage account name.
+        account_domain (str): The storage account domain.
+        container_name (str): The name of the container.
+        blob_name (str): The name of the blob.
+        sas_token (str): The SAS token.
+
+    Returns:
+        str: The generated SAS URL.
     """
     return f"https://{account_name}.{account_domain}/{container_name}/{blob_name}?{sas_token}"
 
 
 def get_file_from_container(container_name: str, blob_name: str, download_path: str) -> bytes:
     """
-    Downloads a file from an Azure Blob storage container.
+    Downloads a file from the specified container.
 
-    :param str container_name: The name of the Azure Blob storage container.
-    :param str blob_name: The name of the blob to download.
-    :param str download_path: The local path to save the downloaded file.
-    :return: The content of the downloaded blob.
+    Args:
+        container_name (str): The name of the container.
+        blob_name (str): The name of the blob to download.
+        download_path (str): The path to download the file to.
+
+    Returns:
+        bytes: The downloaded file content.
     """
-
     blob_client = BLOB_SERVICE_CLIENT.get_blob_client(container_name, blob_name)
 
     with open(download_path, "wb") as download_file:
         download_file.write(blob_client.download_blob().readall())
 
     logger.info(f'Blob {blob_name} downloaded to {download_path}.')
-
-
