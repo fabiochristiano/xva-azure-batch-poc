@@ -40,4 +40,4 @@ POOL_NODE_COUNT = 2  # Pool node count
 POOL_VM_SIZE = 'STANDARD_D2_v3'  # VM Type/Size
 JOB_ID = 'xva-job'  # Job ID
 STANDARD_OUT_FILE_NAME = 'stdout.txt'  # Standard Output file
-APP_ID = "montecarlo-app"  # Application ID
+APP_ID = "montecarlo_app"  # Application ID
