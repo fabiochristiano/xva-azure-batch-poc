@@ -1,5 +1,5 @@
 import json
-import azure.storage_impl as storage_impl
+import azure_impl.storage_impl as storage_impl
 
 
 # Função para carregar e agregar os dados de um arquivo JSON

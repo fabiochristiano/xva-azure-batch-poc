@@ -1,4 +1,3 @@
-from azure.storage.blob import BlobServiceClient
 import config
 import os
 import logging

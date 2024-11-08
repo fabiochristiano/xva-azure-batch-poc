@@ -10,7 +10,7 @@ import logging
 
 import azure.batch.models as batchmodels
 
-import config, azure.storage_impl as storage_impl, azure.batch_imp as batch_imp
+import config, azure_impl.storage_impl as storage_impl, azure_impl.batch_impl as batch_impl
 
 # Configuração básica do logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -40,7 +40,7 @@ if __name__ == '__main__':
 
     # Create a Batch service client. We'll now be interacting with the Batch
     # service in addition to Storage
-    batch_client = batch_imp.initialize_batch_client(
+    batch_client = batch_impl.initialize_batch_client(
         config.BATCH_ACCOUNT_NAME,
         config.BATCH_ACCOUNT_KEY,
         config.BATCH_ACCOUNT_URL
@@ -56,23 +56,23 @@ if __name__ == '__main__':
         
         # Create the pool that will contain the compute nodes that will execute the
         # tasks.        
-        batch_imp.create_pool(batch_client, pool_id)
+        batch_impl.create_pool(batch_client, pool_id)
 
         # Create the job that will run the tasks.
-        batch_imp.create_job(batch_client, job_id, pool_id)
+        batch_impl.create_job(batch_client, job_id, pool_id)
 
         # Add the tasks to the job.
-        batch_imp.add_tasks(batch_client, job_id, input_files, timestap)
+        batch_impl.add_tasks(batch_client, job_id, input_files, timestap)
 
         # Pause execution until tasks reach Completed state.
-        batch_imp.wait_for_tasks_to_complete(batch_client, job_id, datetime.timedelta(minutes=30))
+        batch_impl.wait_for_tasks_to_complete(batch_client, job_id, datetime.timedelta(minutes=30))
         
         print()
         logger.info("Success! All tasks reached the 'Completed' state within the specified timeout period.")
         print()
 
         # Print the stdout.txt and stderr.txt files for each task to the console
-        batch_imp.print_task_output(batch_client, job_id, timestap)
+        batch_impl.print_task_output(batch_client, job_id, timestap)
 
         # Print out some timing info
         end_time = datetime.datetime.now().replace(microsecond=0)
@@ -82,5 +82,5 @@ if __name__ == '__main__':
         print()
 
     except batchmodels.BatchErrorException as err:
-        batch_imp.print_batch_exception(err)
+        batch_impl.print_batch_exception(err)
         raise

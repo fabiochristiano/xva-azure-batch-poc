@@ -8,6 +8,7 @@ import time
 from azure.batch.batch_auth import SharedKeyCredentials
 import random
 
+
 logger = logging.getLogger(__name__)
 
 BATCH_CLIENT = BatchServiceClient(
@@ -218,3 +219,32 @@ def print_batch_exception(batch_exception: batchmodels.BatchErrorException):
             for mesg in batch_exception.error.values:
                 logger.error(f'{mesg.key}:\t{mesg.value}')
     logger.error('-------------------------------------------')
+
+#função para deletar as maquians de todos os  pools existentes  
+def delete_all_pools():
+    try:
+        pools = BATCH_CLIENT.pool.list()
+        for pool in pools:
+            logger.info(f'Deleting pool [{pool.id}]...')
+            BATCH_CLIENT.pool.delete(pool.id)
+    except Exception as e:
+        logger.error(f"Erro ao deletar os pools: {e}")
+        raise
+
+#função para deletar todos os jobs existentes
+def delete_all_jobs():
+    try:
+        jobs = BATCH_CLIENT.job.list()
+        for job in jobs:
+            logger.info(f'Deleting job [{job.id}]...')
+            BATCH_CLIENT.job.delete(job.id)
+    except Exception as e:
+        logger.error(f"Erro ao deletar os jobs: {e}")
+
+
+def main():
+    delete_all_pools()
+    delete_all_jobs()
+
+if __name__ == "__main__":
+    main()

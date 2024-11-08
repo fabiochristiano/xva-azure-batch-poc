@@ -2,7 +2,7 @@ import numpy as np
 import json
 import argparse
 import os
-from azure.storage.blob import BlobServiceClient
+from azure_impl.storage_impl import BlobServiceClient
 
 def upload_file_to_container(container_name: str, file_path: str):
 
